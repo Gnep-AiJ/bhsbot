@@ -1,0 +1,4 @@
+interface:
+  display_name: "BHS 门店经营管家"
+  short_description: "通过微信补全商品与库存信息，确认后安全执行门店操作"
+  default_prompt: "Use $bhs-store-operator to process this WeChat store-management request safely."

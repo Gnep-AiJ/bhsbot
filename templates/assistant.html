@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="chat-shell butler-shell" data-chat data-csrf="{{ csrf_token }}" data-autosend="{{ 'true' if prefill else 'false' }}">
+  <header class="chat-head butler-head">
+    <div class="butler-identity"><span class="ai-spark">B</span><div><p class="eyebrow">经营管家</p><h1>BHS AI</h1></div></div>
+    <span class="live-indicator"><i></i>在线</span>
+  </header>
+  <div class="butler-capabilities"><span>数据分析</span><span>库存管理</span><span>商品操作</span><span>报表建议</span></div>
+  <div class="chat-messages" id="chatMessages" aria-live="polite">
+    {% if messages %}
+      {% for message in messages %}
+      <article class="message {{ message.role }}" data-message-id="{{ message.id }}"><div class="message-meta"><span>{{ message.sender_name or ('BHS AI' if message.role == 'assistant' else '成员') }}</span><span>{{ '微信' if message.channel == 'WECHAT' else '网页' }}</span></div><div class="message-body">{{ message.content }}</div></article>
+      {% endfor %}
+    {% else %}
+      <div class="chat-empty" id="chatEmpty"><span class="ai-core"><i></i>B</span><b>经营上的事，交给我</b><p>我能分析数据，也能在确认后修改商品和库存。</p><div class="prompt-chips"><button type="button" data-prompt="分析当前经营数据，告诉我最需要处理的三件事。">生成经营简报</button><button type="button" data-prompt="检查所有库存，给出补货优先级。">检查补货</button><button type="button" data-prompt="分析商品的成本、售价和毛利空间。">分析毛利</button></div></div>
+    {% endif %}
+  </div>
+  <form class="chat-form butler-form" id="chatForm">
+    <label class="sr-only" for="chatInput">给 BHS AI 下达任务</label>
+    <textarea id="chatInput" name="message" rows="1" maxlength="4000" placeholder="查询、分析或直接下达任务…" required>{{ prefill }}</textarea>
+    <button class="send-button" type="submit" aria-label="发送"><svg viewBox="0 0 24 24"><path d="m5 12 14-7-4 14-3-5-7-2Zm7 2 3-3"/></svg></button>
+  </form>
+</section>
+{% endblock %}

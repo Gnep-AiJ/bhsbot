@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head split sales-page-head"><div><p class="eyebrow">销售中心</p><h1>销售</h1><p class="head-note">收银数据汇总与商品表现</p></div>{% if current_user.role in ('boss', 'admin') %}<a class="button secondary" href="{{ url_for('data_center') }}">数据接入</a>{% endif %}</header>
+
+<section class="metric-deck sales-metrics" aria-label="销售指标">
+  <article class="metric-card metric-card-primary"><div class="metric-label"><span>今日销售额</span><i class="metric-dot"></i></div><strong>¥{{ '%.2f'|format(stats.today_revenue) }}</strong><small>{{ '%g'|format(stats.today_quantity) }} 件商品</small></article>
+  <article class="metric-card"><div class="metric-label"><span>今日毛利</span><svg viewBox="0 0 24 24"><path d="m5 16 4-4 3 3 7-8M15 7h4v4"/></svg></div><strong>¥{{ '%.2f'|format(stats.today_profit) }}</strong><small>{% if stats.today_revenue %}毛利率 {{ '%.1f'|format(stats.today_profit / stats.today_revenue * 100) }}%{% else %}暂无销售记录{% endif %}</small></article>
+  <article class="metric-card"><div class="metric-label"><span>近 7 日</span></div><strong>¥{{ '%.0f'|format(stats.week_revenue) }}</strong><small>滚动销售额</small></article>
+  <article class="metric-card"><div class="metric-label"><span>近 30 日</span></div><strong>¥{{ '%.0f'|format(stats.month_revenue) }}</strong><small>滚动销售额</small></article>
+</section>
+
+<div class="sales-layout">
+  <section class="ops-panel sales-panel sales-chart-panel"><header class="ops-panel-head"><div><p class="eyebrow">销售走势</p><h2>近 7 日</h2></div></header><div class="sales-chart {% if not stats.records %}is-empty{% endif %}"><div class="chart-grid" aria-hidden="true"></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="近七日销售额趋势"><defs><linearGradient id="salesPageFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c46647" stop-opacity=".24"/><stop offset="1" stop-color="#c46647" stop-opacity="0"/></linearGradient></defs><polygon points="0,100 {{ chart_points }} 100,100" fill="url(#salesPageFill)" stroke="none"/><polyline points="{{ chart_points }}" vector-effect="non-scaling-stroke"/></svg>{% if not stats.records %}<div class="chart-empty"><b>销售数据尚未接入</b><span>接入收银系统或导入销售表后自动生成</span></div>{% endif %}</div><div class="chart-labels">{% for item in trend %}<span>{{ item.label }}</span>{% endfor %}</div></section>
+
+  <section class="ops-panel top-products-panel"><header class="ops-panel-head"><div><p class="eyebrow">商品表现</p><h2>近 30 日排行</h2></div></header>{% if top_products %}<div class="rank-list">{% for product in top_products %}<div><span class="rank">{{ loop.index }}</span><span><b>{{ product.name }}</b><small>{{ '%g'|format(product.quantity) }} 件</small></span><strong>¥{{ '%.2f'|format(product.revenue) }}</strong></div>{% endfor %}</div>{% else %}<div class="compact-empty"><b>暂无销售排行</b><span>有销售记录后自动排序</span></div>{% endif %}</section>
+</div>
+
+<section class="ops-panel sales-record-panel"><header class="ops-panel-head"><div><p class="eyebrow">销售明细</p><h2>最近记录</h2></div><span>{{ stats.records }} 条</span></header>{% if recent_sales %}<div class="sales-record-list">{% for sale in recent_sales %}<div><span><b>{{ sale.product_name }}</b><small>{{ sale.sale_date }} · {{ sale.source }}</small></span><span>{{ '%g'|format(sale.quantity) }} 件</span><strong>¥{{ '%.2f'|format(sale.revenue) }}</strong></div>{% endfor %}</div>{% else %}<div class="compact-empty large"><b>暂无销售记录</b><span>当前页面不会虚构经营数据</span>{% if current_user.role in ('boss', 'admin') %}<a href="{{ url_for('data_center') }}">前往数据接入</a>{% endif %}</div>{% endif %}</section>
+{% endblock %}

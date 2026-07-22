@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f3ee">
+  <title>{{ title }} · BHS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="{% if not current_user %}auth-page{% elif request.endpoint == 'assistant' %}assistant-page{% endif %}">
+  {% if current_user %}
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('dashboard') }}" aria-label="BHS 首页">
+      <span class="brand-mark">B</span><span class="brand-copy"><b>BHS</b><small>门店系统</small></span>
+    </a>
+    <nav class="desktop-nav" aria-label="主导航">
+      <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>总览</a>
+      <a class="{% if request.endpoint and request.endpoint.startswith('product') %}active{% endif %}" href="{{ url_for('products') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Zm-8 7 7 3.5V21l-7-3.5V10Zm9 11v-7.5l7-3.5v7.5L13 21Z"/></svg>商品</a>
+      <a class="{% if request.endpoint == 'sales_center' %}active{% endif %}" href="{{ url_for('sales_center') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg>销售</a>
+      <a class="{% if request.endpoint == 'assistant' %}active{% endif %}" href="{{ url_for('assistant') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v1a4 4 0 0 0 1 7h2l4 3 4-3h2a4 4 0 0 0 1-7v-1a7 7 0 0 0-7-7Z"/></svg>管家</a>
+    </nav>
+    <details class="user-menu">
+      <summary aria-label="账号菜单"><span class="user-avatar">{{ current_user.display_name[:1]|upper }}</span><span class="user-name">{{ current_user.display_name }}</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5"/></svg></summary>
+      <div class="user-popover">
+        <b>{{ current_user.display_name }}</b><small>{{ role_labels[current_user.role] }} · {{ current_user.username }}</small>
+        {% if current_user.role in ('boss', 'admin') %}
+        <nav class="account-links"><a href="{{ url_for('users') }}">成员管理<span>→</span></a><a href="{{ url_for('data_center') }}">数据管理<span>→</span></a><a href="{{ url_for('integrations') }}">微信连接<span>→</span></a></nav>
+        {% endif %}
+        <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button type="submit">退出登录</button></form>
+      </div>
+    </details>
+  </header>
+  {% endif %}
+
+  <main class="page {% if not current_user %}auth-main{% endif %}">
+    {% with flashes = get_flashed_messages(with_categories=true) %}
+      {% if flashes %}
+      <div class="flash-stack" role="status">
+        {% for category, message in flashes %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if current_user %}
+  <dialog class="app-dialog entry-dialog" id="productEntryDialog" aria-labelledby="productEntryTitle">
+    <section class="dialog-sheet">
+      <header class="dialog-head"><div><p class="eyebrow">选择一种方式</p><h2 id="productEntryTitle">录入商品</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button></header>
+      <div class="entry-options">
+        <button type="button" data-open-barcode>
+          <span class="entry-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5v14M7 5v14M11 5v14M15 5v14M18 5v14M20 5v14"/></svg></span>
+          <span><b>扫条码</b><small>识别并查询资料</small></span><i>→</i>
+        </button>
+        <a href="{{ url_for('product_new', mode='ai') }}#aiIntake">
+          <span class="entry-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9H3V9a2 2 0 0 1 2-2Zm7 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></span>
+          <span><b>拍照口述</b><small>AI 自动整理字段</small></span><i>→</i>
+        </a>
+        <a href="{{ url_for('product_new', mode='manual') }}">
+          <span class="entry-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Zm0 0 8 3.5m8-3.5L12 11m0 9v-9"/></svg></span>
+          <span><b>手动录入</b><small>直接填写商品资料</small></span><i>→</i>
+        </a>
+      </div>
+    </section>
+  </dialog>
+
+  <dialog class="app-dialog barcode-dialog" id="barcodeDialog" data-csrf="{{ csrf_token }}" aria-labelledby="barcodeDialogTitle">
+    <section class="dialog-sheet">
+      <header class="dialog-head"><div><p class="eyebrow">商品识别</p><h2 id="barcodeDialogTitle">扫描条码</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button></header>
+      <label class="barcode-capture">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 7v10M11 7v10M15 7v10"/></svg>
+        <b>拍摄条码</b>
+        <input type="file" accept="image/*" capture="environment" data-barcode-photo>
+      </label>
+      <form class="barcode-manual" data-barcode-manual><label for="manualBarcode">或输入条码</label><div><input id="manualBarcode" name="barcode" inputmode="numeric" autocomplete="off" placeholder="EAN / UPC"><button class="button secondary" type="submit">查询</button></div></form>
+      <div class="barcode-feedback" data-barcode-feedback aria-live="polite"></div>
+    </section>
+  </dialog>
+
+  <dialog class="app-dialog confirm-dialog" id="confirmActionDialog" aria-labelledby="confirmActionTitle">
+    <section class="dialog-sheet">
+      <header class="dialog-head"><div><p class="eyebrow">需要确认</p><h2 id="confirmActionTitle">确认操作</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button></header>
+      <p class="confirm-message" data-confirm-message>确定继续吗？</p>
+      <div class="confirm-actions"><button class="button secondary" type="button" data-close-dialog>取消</button><button class="button danger-solid" type="button" data-confirm-action>确认</button></div>
+    </section>
+  </dialog>
+
+  <nav class="mobile-nav" aria-label="手机导航">
+    <a class="{% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>
+      <span>总览</span>
+    </a>
+    <a class="{% if request.endpoint and request.endpoint.startswith('product') %}active{% endif %}" href="{{ url_for('products') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4-8 4-8-4 8-4Zm-8 7 7 3.5V21l-7-3.5V10Zm9 11v-7.5l7-3.5v7.5L13 21Z"/></svg>
+      <span>商品</span>
+    </a>
+    <a class="{% if request.endpoint == 'sales_center' %}active{% endif %}" href="{{ url_for('sales_center') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h4V10H3v10Zm7 0h4V5h-4v15Zm7 0h4V3h-4v17Z"/></svg>
+      <span>销售</span>
+    </a>
+    <a class="ai-tab {% if request.endpoint == 'assistant' %}active{% endif %}" href="{{ url_for('assistant') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7v1.3A4 4 0 0 0 6 18h2l4 4 4-4h2a4 4 0 0 0 1-7.7V9a7 7 0 0 0-7-7Zm-3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+      <span>管家</span>
+    </a>
+  </nav>
+  {% endif %}
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+[Unit]
+Description=BHS supermarket management system
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=bhs
+Group=bhs
+WorkingDirectory=/opt/bhs
+EnvironmentFile=/opt/bhs/.env
+ExecStart=/opt/bhs/.venv/bin/gunicorn --bind 127.0.0.1:5173 --workers 2 --threads 4 --timeout 150 --access-logfile - app:app
+Restart=always
+RestartSec=3
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

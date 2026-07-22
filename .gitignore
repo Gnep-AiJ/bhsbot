@@ -1,0 +1,44 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node and browser tooling
+node_modules/
+playwright-report/
+test-results/
+npm-debug.log*
+
+# Cloudflare local state
+.wrangler/
+
+# Runtime data and generated media
+data/*.db
+data/*.db-*
+data/*.png
+static/uploads/*
+!static/uploads/.gitkeep
+openclaw/config/
+openclaw/workspace/openclaw-workspace-state.json
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Retired local Pages experiments
+pages-test/runtime/
+pages-test/.wrangler/
+pages-test/.dev.vars
+pages-test/native/.dev.vars

@@ -1,0 +1,8 @@
+{
+  "name": "bhs-cloudflare-native",
+  "private": true,
+  "scripts": {
+    "check": "node --check dist/_worker.js && node --check dist/app.js",
+    "deploy": "wrangler pages deploy dist --project-name bhsbot"
+  }
+}

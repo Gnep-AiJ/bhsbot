@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bhs-wechat-bridge",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "BHS_BASE_URL": "https://bhsbot.pages.dev",
+    "WEIXIN_CDN_BASE_URL": "https://novac2c.cdn.weixin.qq.com/c2c",
+    "WEIXIN_CHANNEL_VERSION": "2.4.6",
+    "WEIXIN_APP_ID": "bot",
+    "WEIXIN_APP_CLIENT_VERSION": "132102"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "WECHAT_BRIDGE",
+        "class_name": "WeChatBridge"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["WeChatBridge"]
+    }
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
+}

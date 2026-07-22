@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head dashboard-head cockpit-page-head">
+  <div><p class="eyebrow">BHS · 门店实时经营</p><h1>经营总览</h1></div>
+  <a class="icon-button add-main" href="{{ url_for('product_new') }}" data-open-dialog="productEntryDialog" aria-label="录入商品"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>录入商品</span></a>
+</header>
+
+<section class="overview-board" aria-label="核心经营指标">
+  <header class="overview-board-head">
+    <div class="overview-live"><i></i><b>经营数据</b><span>{{ '销售已同步' if stats.has_sales else '销售数据待接入' }}</span></div>
+    {% if current_user.role in ('boss', 'admin') %}<a href="{{ url_for('data_center') }}">数据中心 <span>→</span></a>{% endif %}
+  </header>
+
+  <div class="overview-kpis">
+    <article class="overview-kpi kpi-sales">
+      <header><span>今日销售额</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9m5 10V5m5 14v-7m4 7V3"/></svg></header>
+      <strong>¥{{ '%.2f'|format(stats.today_revenue) }}</strong>
+      <footer><span>近 7 日累计</span><b>¥{{ '%.0f'|format(stats.week_revenue) }}</b></footer>
+    </article>
+
+    <article class="overview-kpi kpi-profit {% if stats.today_profit < 0 %}is-negative{% endif %}">
+      <header><span>今日毛利</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 5-5 4 3 7-8M15 6h5v5"/></svg></header>
+      <strong>¥{{ '%.2f'|format(stats.today_profit) }}</strong>
+      <footer>{% if stats.today_revenue %}<span>毛利率</span><b>{{ '%.1f'|format(stats.today_profit / stats.today_revenue * 100) }}%</b>{% else %}<span>暂无销售记录</span>{% endif %}</footer>
+    </article>
+
+    <a class="overview-kpi kpi-alert {% if stats.out_count + stats.missing_price_count + stats.negative_margin_count + stats.expiring_count %}has-alert{% endif %}" href="#todayTasks">
+      <header><span>经营异常</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5m0 4h.01M10 3h4l8 16H2L10 3Z"/></svg></header>
+      <strong>{{ stats.out_count + stats.missing_price_count + stats.negative_margin_count + stats.expiring_count }}</strong>
+      <footer><span>缺货 {{ stats.out_count }}</span><b>临期 {{ stats.expiring_count }} →</b></footer>
+    </a>
+  </div>
+
+  <section class="inventory-overview" aria-label="库存概况">
+    <header class="inventory-overview-head"><div><b>库存概况</b><span>按当前商品档案估算</span></div><a href="{{ url_for('products') }}">查看商品 →</a></header>
+    <div class="inventory-overview-grid">
+      <a href="{{ url_for('products') }}"><span>商品数量</span><b>{{ stats.products }}</b><small>{{ stats.low_count }} 件待补货</small></a>
+      <a href="{{ url_for('products') }}"><span>库存总量</span><b>{{ '%g'|format(stats.stock) }}</b><small>当前在库件数</small></a>
+      <a href="{{ url_for('products') }}"><span>库存成本</span><b>¥{{ '%.0f'|format(stats.cost_value) }}</b><small>按商品进价计算</small></a>
+      <a href="{{ url_for('products') }}"><span>库存货值</span><b>¥{{ '%.0f'|format(stats.retail_value) }}</b><small>预计毛利 ¥{{ '%.0f'|format(stats.potential_profit) }}</small></a>
+    </div>
+  </section>
+</section>
+
+<div class="dashboard-main-grid cockpit-content-grid">
+  <section class="ops-panel sales-panel cockpit-panel">
+    <header class="ops-panel-head"><div><p class="eyebrow">销售走势</p><h2>近 7 日</h2></div><a href="{{ url_for('sales_center') }}">销售中心</a></header>
+    <div class="sales-chart {% if not stats.has_sales %}is-empty{% endif %}"><div class="chart-grid" aria-hidden="true"></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="近七日销售额趋势"><defs><linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c46647" stop-opacity=".24"/><stop offset="1" stop-color="#c46647" stop-opacity="0"/></linearGradient></defs><polygon points="0,100 {{ chart_points }} 100,100" fill="url(#salesFill)" stroke="none"/><polyline points="{{ chart_points }}" vector-effect="non-scaling-stroke"/></svg>{% if not stats.has_sales %}<div class="chart-empty"><b>暂无销售数据</b><span>接入收银系统后自动更新</span></div>{% endif %}</div>
+    <div class="chart-labels">{% for item in sales_trend %}<span>{{ item.label }}</span>{% endfor %}</div>
+  </section>
+
+  <section class="ops-panel task-panel cockpit-panel" id="todayTasks">
+    <header class="ops-panel-head"><div><p class="eyebrow">今日待办</p><h2>经营异常</h2></div><span class="task-total">{{ stats.out_count + stats.missing_price_count + stats.negative_margin_count + stats.expiring_count }}</span></header>
+    <div class="task-list">
+      <a href="{{ url_for('products', issue='out') }}"><span class="task-icon danger"><svg viewBox="0 0 24 24"><path d="M12 8v5m0 4h.01M10 3h4l8 16H2L10 3Z"/></svg></span><span><b>缺货商品</b><small>库存已经为 0</small></span><strong>{{ stats.out_count }}</strong></a>
+      <a href="{{ url_for('products', issue='pricing') }}"><span class="task-icon amber"><svg viewBox="0 0 24 24"><path d="M12 2v20m5-16H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span><b>价格待完善</b><small>缺少进价或售价</small></span><strong>{{ stats.missing_price_count }}</strong></a>
+      <a href="{{ url_for('products', issue='margin') }}"><span class="task-icon danger"><svg viewBox="0 0 24 24"><path d="m5 8 4 4 3-3 7 7M15 16h4v-4"/></svg></span><span><b>负毛利商品</b><small>售价低于进价</small></span><strong>{{ stats.negative_margin_count }}</strong></a>
+      <a href="{{ url_for('products', issue='expiry') }}"><span class="task-icon"><svg viewBox="0 0 24 24"><path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/></svg></span><span><b>临期商品</b><small>30 天内到期</small></span><strong>{{ stats.expiring_count }}</strong></a>
+    </div>
+  </section>
+</div>
+
+<section class="ops-panel movement-panel dashboard-movement cockpit-panel">
+  <header class="ops-panel-head"><div><p class="eyebrow">库存流水</p><h2>最近变动</h2></div><a href="{{ url_for('data_center') }}">查看数据</a></header>
+  {% if recent_movements %}<div class="movement-list">{% for movement in recent_movements %}<a href="{{ url_for('product_detail', product_id=movement.product_id) if movement.product_id else '#' }}"><span><b>{{ movement.product_name }}</b><small>{{ movement.reason }}</small></span><strong class="{% if movement.change_amount < 0 %}negative{% endif %}">{{ '+' if movement.change_amount > 0 else '' }}{{ '%g'|format(movement.change_amount) }}</strong></a>{% endfor %}</div>{% else %}<div class="compact-empty"><b>暂无库存变动</b><span>入库、盘点和 AI 调整会记录在这里</span></div>{% endif %}
+</section>
+{% endblock %}

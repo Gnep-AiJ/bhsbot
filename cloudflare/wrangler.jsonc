@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "bhsbot",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-07-21",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bhsbot-db",
+      "database_id": "9ab1de9e-a34a-4946-9ceb-1fd5892a4b8c"
+    }
+  ],
+  "vars": {
+    "DEEPSEEK_MODEL": "deepseek-v4-flash",
+    "BHS_ENVIRONMENT": "production"
+  }
+}

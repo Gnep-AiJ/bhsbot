@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head split products-head product-page-head">
+  <div><p class="eyebrow">商品档案</p><h1>{% if status == 'archived' %}已停用商品{% else %}商品{% endif %}</h1><p class="head-note">共 {{ total }} 件</p></div>
+  <div class="product-header-actions">
+    {% if current_user.role in ('boss', 'admin') %}<button class="button secondary manage-toggle" type="button" data-management-toggle><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span>管理</span></button>{% endif %}
+    <a class="button primary button-icon product-add-button" href="{{ url_for('product_new') }}" data-open-dialog="productEntryDialog"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>录入商品</span></a>
+  </div>
+</header>
+
+<section class="product-controls" aria-label="商品搜索和筛选">
+  <form class="product-search" method="get" action="{{ url_for('products') }}">
+    <input type="hidden" name="status" value="{{ status }}"><input type="hidden" name="issue" value="{{ issue }}">
+    <label class="search-input"><span class="sr-only">搜索商品</span><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" name="q" value="{{ query }}" placeholder="名称、条码或供应商"></label>
+    <button type="submit">搜索</button>
+  </form>
+  <nav class="filter-tabs product-filter-tabs" aria-label="商品状态筛选">
+    <a class="{% if status == 'all' and not issue %}active{% endif %}" href="{{ url_for('products', q=query) }}">在售</a>
+    <a class="{% if status == 'low' %}active{% endif %}" href="{{ url_for('products', q=query, status='low') }}">待补货</a>
+    {% if current_user.role in ('boss', 'admin') %}<a class="{% if status == 'archived' %}active{% endif %}" href="{{ url_for('products', q=query, status='archived') }}">已停用</a>{% endif %}
+  </nav>
+</section>
+
+{% if issue %}<div class="active-filter-note"><span>{% if issue == 'out' %}缺货商品{% elif issue == 'pricing' %}价格待完善{% elif issue == 'margin' %}负毛利商品{% else %}30 天内到期{% endif %}</span><a href="{{ url_for('products') }}">清除筛选</a></div>{% endif %}
+
+<form class="product-bulk-form" method="post" action="{{ url_for('products_bulk_status') }}" data-product-management data-delete-dialog data-delete-message="确定{{ '恢复' if status == 'archived' else '停用' }}已选商品吗？">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <input type="hidden" name="operation" value="{{ 'restore' if status == 'archived' else 'archive' }}" data-bulk-operation>
+  {% if products %}
+  <div class="product-list" role="list">
+    {% for product in products %}
+    {% set margin = ((product.price - product.cost) / product.price * 100) if product.price else 0 %}
+    <article class="product-list-item {% if product.stock <= product.low_stock %}is-low{% endif %} {% if product.archived_at %}is-archived{% endif %}" role="listitem">
+      <label class="product-select" aria-label="选择 {{ product.name }}"><input type="checkbox" name="product_ids" value="{{ product.id }}"><span></span></label>
+      <a class="product-main-link" href="{{ url_for('product_detail', product_id=product.id) }}">
+        <div class="product-identity"><span class="product-avatar product-list-avatar">{% if product.image_path %}<img src="{{ url_for('static', filename=product.image_path) }}" alt="">{% else %}{{ product.name[:1] }}{% endif %}</span><span class="product-copy"><b>{{ product.name }}</b><small>{{ [product.brand, product.specification]|select|join(' · ') or product.barcode or product.category or '资料待完善' }}</small></span></div>
+        <div class="product-stock"><span>库存</span><b>{{ '%g'|format(product.stock) }} {{ product.unit }}</b>{% if product.archived_at %}<i class="archived">已停用</i>{% elif product.stock <= product.low_stock %}<i>待补货</i>{% endif %}</div>
+        <div class="product-number"><span>进价</span><b>¥{{ '%.2f'|format(product.cost) }}</b></div>
+        <div class="product-number"><span>售价</span><b>¥{{ '%.2f'|format(product.price) }}</b></div>
+        <div class="product-number product-margin {% if margin < 0 %}is-negative{% endif %}"><span>毛利率</span><b>{{ '%.1f'|format(margin) }}%</b></div>
+        <div class="product-supplier"><span>供应商</span><b>{{ product.supplier or '未设置' }}</b></div>
+        <svg class="product-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </a>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="bulk-action-bar" data-bulk-bar>
+    <div><b><span data-selection-count>0</span> 件已选</b><button type="button" data-select-all>全选本页</button></div>
+    <div class="bulk-buttons">
+      {% if status == 'archived' %}
+      <button class="bulk-primary" type="submit" data-operation="restore" data-confirm-message="确定恢复已选商品吗？">恢复所选</button>
+      <button class="bulk-primary danger" type="submit" data-operation="purge" data-confirm-message="永久删除后商品无法恢复，确定继续吗？">永久删除</button>
+      {% else %}
+      <button class="bulk-primary danger" type="submit" data-operation="archive" data-confirm-message="确定停用已选商品吗？">停用所选</button>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <section class="product-empty"><div class="empty-product-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 7v18M9 7v18M14 7v18M20 7v18M24 7v18M27 7v18"/></svg></div><h2>没有匹配的商品</h2><p>{% if query or issue or status != 'all' %}调整筛选条件后再试。{% else %}点击右上角开始录入。{% endif %}</p>{% if query or issue or status != 'all' %}<a class="button secondary" href="{{ url_for('products') }}">清除筛选</a>{% endif %}</section>
+  {% endif %}
+</form>
+
+{% if pages > 1 %}<nav class="pagination" aria-label="商品分页"><a class="{% if page <= 1 %}disabled{% endif %}" href="{{ url_for('products', q=query, status=status, issue=issue, page=page-1) }}">上一页</a><span>{{ page }} / {{ pages }}</span><a class="{% if page >= pages %}disabled{% endif %}" href="{{ url_for('products', q=query, status=status, issue=issue, page=page+1) }}">下一页</a></nav>{% endif %}
+{% endblock %}

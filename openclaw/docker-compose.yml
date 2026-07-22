@@ -1,0 +1,24 @@
+services:
+  gateway:
+    image: node:22-bookworm-slim
+    working_dir: /app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOME: /home/node
+      OPENCLAW_HOME: /home/node
+      TZ: Asia/Shanghai
+    command:
+      - /app/node_modules/.bin/openclaw
+      - gateway
+      - --bind
+      - lan
+    ports:
+      - "127.0.0.1:18789:18789"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./runtime:/app:ro
+      - ./config:/home/node/.openclaw
+      - ./workspace:/home/node/.openclaw/workspace

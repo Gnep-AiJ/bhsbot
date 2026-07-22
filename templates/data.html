@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-head compact-head"><p class="eyebrow">管理</p><h1>数据</h1></header>
+
+<div class="data-list">
+  <section class="data-row">
+    <span class="data-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg></span>
+    <div class="grow"><h2>商品数据</h2><p>{{ product_count }} 条记录</p></div>
+    <a class="button secondary" href="{{ url_for('export_products_csv') }}" download>导出 CSV</a>
+  </section>
+  <section class="data-row">
+    <span class="data-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m6 14v-7m5 7V3"/></svg></span>
+    <div class="grow"><h2>销售数据</h2><p>{{ sales_count }} 条记录</p></div>
+    <a class="button secondary" href="{{ url_for('export_sales_csv') }}" download>导出 CSV</a>
+  </section>
+  <section class="data-row">
+    <span class="data-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3M18 7l-3 3M6 17l3-3"/></svg></span>
+    <div class="grow"><h2>库存流水</h2><p>{{ movement_count }} 条记录</p></div>
+    <a class="button secondary" href="{{ url_for('export_inventory_movements_csv') }}" download>导出 CSV</a>
+  </section>
+  <section class="data-row">
+    <span class="data-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-3-3M17 17H6l3 3M18 7l-3 3M6 17l3-3"/></svg></span>
+    <div class="grow"><h2>外部同步</h2><p>收银系统或数据接口</p></div>
+    <span class="status pending">未配置</span>
+  </section>
+</div>
+{% endblock %}

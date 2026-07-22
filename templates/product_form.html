@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+{% set is_edit = product and product.id %}
+<header class="page-head"><a class="back-link" href="{% if is_edit %}{{ url_for('product_detail', product_id=product.id) }}{% else %}{{ url_for('products') }}{% endif %}">← 返回</a><h1>{{ title }}</h1></header>
+
+<form class="edit-layout" method="post" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+  <section class="photo-panel">
+    <div class="photo-preview" id="photoPreview">
+      {% if product and product.image_path %}<img src="{{ url_for('static', filename=product.image_path) }}" alt="当前商品图片">{% else %}<span class="photo-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h3l1.5-2h5L16 7h3a2 2 0 0 1 2 2v9H3V9a2 2 0 0 1 2-2Zm7 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg><b>商品照片</b><small>拍摄正面包装</small></span>{% endif %}
+    </div>
+    <div class="photo-actions">
+      <label class="button secondary upload-button">拍照<input type="file" name="camera_photo" accept="image/*" capture="environment" data-photo-input></label>
+      <label class="button secondary upload-button">从图库选择<input type="file" name="gallery_photo" accept="image/jpeg,image/png,image/webp,image/gif" data-photo-input></label>
+    </div>
+    <small class="field-note">最大 10MB</small>
+  </section>
+
+  <div class="form-sections">
+    {% if not is_edit and entry_mode != 'manual' %}
+    <section class="ai-intake" id="aiIntake" data-product-ai data-csrf="{{ csrf_token }}">
+      <div class="ai-intake-head"><span class="ai-label">AI 整理</span><h2>说出商品信息</h2><p>名称、进价、售价、库存、供应商。</p></div>
+      <div class="ai-intake-compose">
+        <label class="sr-only" for="productDescription">描述商品信息</label>
+        <textarea id="productDescription" rows="3" maxlength="3000" placeholder="输入文字，或点击语音按钮说出商品信息"></textarea>
+        <div class="ai-intake-actions">
+          <button class="button secondary voice-button" type="button" data-voice-input><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="8" height="12" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg><span>语音输入</span></button>
+          <button class="button primary" type="button" data-ai-organize>AI 整理信息</button>
+        </div>
+      </div>
+      <p class="ai-intake-status" data-ai-status>整理后请核对价格和库存。</p>
+    </section>
+    {% endif %}
+    <section class="form-section">
+      <h2>基本信息</h2>
+      <div class="field-grid two">
+        <label class="span-two">商品名称<span>*</span><input name="name" value="{{ product.name if product else '' }}" required maxlength="100"></label>
+        <label>品牌<input name="brand" value="{{ product.brand if product and product.brand else '' }}" maxlength="100"></label>
+        <label>规格<input name="specification" value="{{ product.specification if product and product.specification else '' }}" maxlength="100" placeholder="如 500ml / 24瓶"></label>
+        <label>SKU<input name="sku" value="{{ product.sku if product and product.sku else '' }}" maxlength="80" inputmode="text"></label>
+        <label>条码<input name="barcode" value="{{ product.barcode if product and product.barcode else '' }}" maxlength="80" inputmode="numeric"></label>
+        <label>分类<input name="category" value="{{ product.category if product and product.category else '' }}" maxlength="80"></label>
+        <label>单位<input name="unit" value="{{ product.unit if product and product.unit else '件' }}" maxlength="20"></label>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2>库存与价格</h2>
+      <div class="field-grid two">
+        <label>当前库存<input type="number" name="stock" value="{{ product.stock if product else 0 }}" min="0" step="0.01" inputmode="decimal"></label>
+        <label>预警库存<input type="number" name="low_stock" value="{{ product.low_stock if product else 5 }}" min="0" step="0.01" inputmode="decimal"></label>
+        <label>进价（元）<input type="number" name="cost" value="{{ product.cost if product else 0 }}" min="0" step="0.01" inputmode="decimal"></label>
+        <label>售价（元）<input type="number" name="price" value="{{ product.price if product else 0 }}" min="0" step="0.01" inputmode="decimal"></label>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2>供货与存放</h2>
+      <div class="field-grid two">
+        <label>供应商<input name="supplier" value="{{ product.supplier if product and product.supplier else '' }}" maxlength="120"></label>
+        <label>联系方式<input name="supplier_contact" value="{{ product.supplier_contact if product and product.supplier_contact else '' }}" maxlength="120" inputmode="tel"></label>
+        <label>货位<input name="location" value="{{ product.location if product and product.location else '' }}" maxlength="120"></label>
+        <label>到期日期<input type="date" name="expiry_date" value="{{ product.expiry_date if product and product.expiry_date else '' }}"></label>
+        <label class="span-two">备注<textarea name="notes" rows="4" maxlength="2000">{{ product.notes if product and product.notes else '' }}</textarea></label>
+      </div>
+    </section>
+    <div class="form-actions"><button class="button primary" type="submit">保存商品</button><a class="button quiet" href="{% if product and product.id %}{{ url_for('product_detail', product_id=product.id) }}{% else %}{{ url_for('products') }}{% endif %}">取消</a></div>
+  </div>
+</form>
+{% endblock %}

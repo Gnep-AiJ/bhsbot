@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="login-card">
+  <div class="login-brand"><span>B</span><div><b>BHS</b><small>门店工作台</small></div></div>
+  <div class="login-copy"><h1>登录</h1><p>使用门店分配的内部账号</p></div>
+  <form class="form-stack login-form" action="{{ url_for('login_post') }}" method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+    <label>账号<input name="username" autocomplete="username" autocapitalize="none" enterkeyhint="next" required></label>
+    <label>密码<input type="password" name="password" autocomplete="current-password" enterkeyhint="done" required></label>
+    <button class="button primary full" type="submit">进入 BHS</button>
+  </form>
+  <div class="login-foot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>仅限内部成员使用</span></div>
+</section>
+{% endblock %}

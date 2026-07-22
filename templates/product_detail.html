@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+{% set unit_profit = product.price - product.cost %}
+{% set margin = (unit_profit / product.price * 100) if product.price else 0 %}
+<header class="page-head product-detail-head clean-detail-head"><div><a class="back-link" href="{{ url_for('products', status='archived' if product.archived_at else 'all') }}">← 返回商品</a><p class="eyebrow">商品档案 · #{{ product.id }}</p><h1>{{ product.name }}</h1></div>{% if product.archived_at %}<span class="archived-badge">已停用</span>{% endif %}</header>
+
+<section class="product-detail-hero compact-product-hero">
+  <div class="detail-product-photo">{% if product.image_path %}<img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">{% else %}<span>{{ product.name[:1] }}</span>{% endif %}</div>
+  <div class="detail-product-copy"><div class="detail-badges"><span>{{ product.category or '未分类' }}</span>{% if product.archived_at %}<span>历史档案</span>{% elif product.stock <= product.low_stock %}<span class="alert">待补货</span>{% else %}<span class="ready">库存正常</span>{% endif %}</div><h2>{{ [product.brand, product.specification]|select|join(' · ') or '商品资料待完善' }}</h2><p>{{ product.barcode or product.sku or '暂无条码与 SKU' }}</p></div>
+</section>
+
+<section class="detail-metric-grid" aria-label="商品经营指标">
+  <article><span>售价</span><strong>¥{{ '%.2f'|format(product.price) }}</strong><small>/ {{ product.unit }}</small></article>
+  <article><span>进价</span><strong>¥{{ '%.2f'|format(product.cost) }}</strong><small>单位成本</small></article>
+  <article class="{% if unit_profit < 0 %}is-alert{% endif %}"><span>单位毛利</span><strong>¥{{ '%.2f'|format(unit_profit) }}</strong><small>{{ '%.1f'|format(margin) }}% 毛利率</small></article>
+  <article class="{% if product.stock <= product.low_stock %}is-alert{% endif %}"><span>当前库存</span><strong>{{ '%g'|format(product.stock) }}</strong><small>{{ product.unit }} · 预警 {{ '%g'|format(product.low_stock) }}</small></article>
+</section>
+
+<details class="product-operations">
+  <summary><span><b>商品操作</b><small>编辑、AI 管理与状态设置</small></span><i>展开</i></summary>
+  <div class="operation-grid">
+    <a class="operation-button" href="{{ url_for('product_edit', product_id=product.id) }}"><svg viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20Zm9.5-13 3.5 3.5"/></svg><span><b>编辑商品</b><small>资料、价格与库存</small></span></a>
+    {% if not product.archived_at %}<button class="operation-button" type="button" data-open-dialog="stockAdjustDialog"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14M4 4h16v16H4z"/></svg><span><b>调整库存</b><small>入库、出库或盘点</small></span></button>{% endif %}
+    <a class="operation-button" href="{{ url_for('assistant', ask='管理商品 #' ~ product.id ~ ' ' ~ product.name ~ '，先告诉我当前问题。') }}"><span class="operation-ai">B</span><span><b>交给管家</b><small>分析或执行操作</small></span></a>
+    {% if current_user.role in ('boss', 'admin') %}
+      {% if product.archived_at %}<form action="{{ url_for('product_restore', product_id=product.id) }}" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="operation-button restore" type="submit"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6M4 4v6h6"/></svg><span><b>恢复商品</b><small>重新加入在售列表</small></span></button></form><form action="{{ url_for('product_purge', product_id=product.id) }}" method="post" data-delete-dialog data-delete-message="永久删除“{{ product.name }}”吗？商品无法恢复，但销售与库存历史仍会保留。"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="operation-button danger" type="submit"><svg viewBox="0 0 24 24"><path d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m3 0-1 13H7L6 7"/></svg><span><b>永久删除</b><small>不可恢复，仅保留流水</small></span></button></form>
+      {% else %}<form action="{{ url_for('product_delete', product_id=product.id) }}" method="post" data-delete-dialog data-delete-message="确定停用“{{ product.name }}”吗？历史销售和库存记录会保留。"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><button class="operation-button danger" type="submit"><svg viewBox="0 0 24 24"><path d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m3 0-1 13H7L6 7"/></svg><span><b>停用商品</b><small>从在售列表移除</small></span></button></form>{% endif %}
+    {% endif %}
+  </div>
+</details>
+
+{% if not product.archived_at %}<dialog class="app-dialog stock-dialog" id="stockAdjustDialog" aria-labelledby="stockAdjustTitle"><section class="dialog-sheet"><header class="dialog-head"><div><p class="eyebrow">库存流水</p><h2 id="stockAdjustTitle">调整库存</h2></div><button class="dialog-close" type="button" data-close-dialog aria-label="关闭">×</button></header><div class="stock-current"><span>当前库存</span><strong>{{ '%g'|format(product.stock) }} {{ product.unit }}</strong></div><form class="form-stack" action="{{ url_for('product_stock_adjust', product_id=product.id) }}" method="post"><input type="hidden" name="_csrf" value="{{ csrf_token }}"><label>操作<select name="stock_operation"><option value="in">入库增加</option><option value="out">出库减少</option><option value="set">盘点后设为</option></select></label><label>数量<input name="quantity" type="number" min="0" step="0.01" inputmode="decimal" required></label><label>原因<input name="reason" maxlength="200" placeholder="例如：供应商到货、盘点修正" required></label><button class="button primary full" type="submit">确认调整</button></form></section></dialog>{% endif %}
+
+<div class="detail-data-grid">
+  <section class="detail-data-panel sales-snapshot"><header><div><p class="eyebrow">销售表现</p><h2>商品销售</h2></div><span>实时汇总</span></header><div class="detail-sales-grid"><div><span>今日销售额</span><b>¥{{ '%.2f'|format(sales.today_revenue) }}</b></div><div><span>今日销量</span><b>{{ '%g'|format(sales.today_quantity) }}</b></div><div><span>近 30 日销售额</span><b>¥{{ '%.2f'|format(sales.month_revenue) }}</b></div><div><span>近 30 日销量</span><b>{{ '%g'|format(sales.month_quantity) }}</b></div></div>{% if not sales.month_quantity %}<p class="data-note">暂无销售记录，接入收银数据后自动更新。</p>{% endif %}</section>
+  <section class="detail-data-panel"><header><div><p class="eyebrow">商品资料</p><h2>基础信息</h2></div></header><dl class="detail-list modern-detail-list"><div><dt>品牌</dt><dd>{{ product.brand or '—' }}</dd></div><div><dt>规格</dt><dd>{{ product.specification or '—' }}</dd></div><div><dt>SKU</dt><dd>{{ product.sku or '—' }}</dd></div><div><dt>条码</dt><dd>{{ product.barcode or '—' }}</dd></div><div><dt>货位</dt><dd>{{ product.location or '—' }}</dd></div><div><dt>到期日期</dt><dd>{{ product.expiry_date or '—' }}</dd></div></dl></section>
+  <section class="detail-data-panel"><header><div><p class="eyebrow">供应链</p><h2>供货信息</h2></div></header><dl class="detail-list modern-detail-list"><div><dt>供应商</dt><dd>{{ product.supplier or '—' }}</dd></div><div><dt>联系方式</dt><dd>{% if product.supplier_contact %}<a href="tel:{{ product.supplier_contact }}">{{ product.supplier_contact }}</a>{% else %}—{% endif %}</dd></div><div><dt>更新时间</dt><dd>{{ product.updated_at[:10] }}</dd></div></dl>{% if product.notes %}<div class="notes modern-notes"><small>备注</small><p>{{ product.notes }}</p></div>{% endif %}</section>
+</div>
+
+<details class="detail-drawer">
+  <summary><span><b>库存流水</b><small>{{ movements|length }} 条最近记录</small></span><i>查看</i></summary>
+  <div class="inventory-history">{% if movements %}{% for movement in movements %}<div><span><b>{{ movement.reason }}</b><small>{{ movement.created_at[:16].replace('T', ' ') }} · {{ movement.source }}</small></span><span>{{ '%g'|format(movement.before_stock) }} → {{ '%g'|format(movement.after_stock) }}</span><strong class="{% if movement.change_amount < 0 %}negative{% endif %}">{{ '+' if movement.change_amount > 0 else '' }}{{ '%g'|format(movement.change_amount) }}</strong></div>{% endfor %}{% else %}<div class="compact-empty"><b>暂无库存变动</b><span>后续入库、盘点和 AI 调整会保留记录</span></div>{% endif %}</div>
+</details>
+{% endblock %}
