@@ -36,12 +36,14 @@ function requestJson(url, options = {}) {
 
 async function main() {
   loadEnv(process.env.ENV_FILE || ".env");
-  const bridge = process.env.BRIDGE_URL || "https://bhs-wechat-bridge.w1nter.workers.dev";
+  const bridge = process.env.BRIDGE_URL;
   const bhs = process.env.BHS_URL || "https://bhsbot.pages.dev";
   const token = process.env.BHS_CHANNEL_TOKEN;
-  const username = process.env.BOSS_USERNAME || "Dongli";
+  const username = process.env.BOSS_USERNAME;
   const password = process.env.BOSS_INITIAL_PASSWORD;
-  if (!token || !password) throw new Error("BHS_CHANNEL_TOKEN and BOSS_INITIAL_PASSWORD are required");
+  if (!bridge || !token || !username || !password) {
+    throw new Error("BRIDGE_URL, BHS_CHANNEL_TOKEN, BOSS_USERNAME and BOSS_INITIAL_PASSWORD are required");
+  }
 
   const status = await requestJson(`${bridge}/status`, { headers: { Authorization: `Bearer ${token}` } });
   if (!status.ok || !status.data.running || status.data.last_error) throw new Error(`bridge unhealthy: ${status.status} ${status.data.last_error || "not_running"}`);

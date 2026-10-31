@@ -7,7 +7,9 @@
     {
       "binding": "DB",
       "database_name": "bhsbot-db",
-      "database_id": "9ab1de9e-a34a-4946-9ceb-1fd5892a4b8c"
+      // Placeholder. Real D1 ids belong in local or CI config, not this public file.
+      // Replace with the id from `npx wrangler d1 create bhsbot-db` (or the dashboard) before remote migrations or deploy.
+      "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
   "vars": {
