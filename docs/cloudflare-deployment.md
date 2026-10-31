@@ -14,7 +14,7 @@
 ## 首次准备
 
 1. 安装 Node.js 22 和 Wrangler，并执行 `wrangler login`。
-2. 创建 D1 数据库，将 `cloudflare/wrangler.jsonc` 中的数据库绑定指向目标数据库。
+2. 创建 D1 数据库。`cloudflare/wrangler.jsonc` 里的 `database_id` 是占位符；用 `npx wrangler d1 create bhsbot-db` 或控制台中的真实 ID 替换它，再把绑定指向目标数据库。真实 ID 放在本地或 CI 配置中，不要提交回公开仓库。
 3. 为 Pages 项目配置：
    - `SESSION_SECRET`
    - `BOSS_USERNAME`
